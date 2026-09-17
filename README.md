@@ -1,16 +1,19 @@
 # High-Concurrency Ticket Booking System
 
-Hệ thống đặt vé sự kiện **high-concurrency** (hàng nghìn request/giây) được xây dựng để mô phỏng flash-sale thực tế mà không bị overselling.
+A high-performance ticket booking system designed for flash-sale scenarios.  
+The system focuses on **preventing overselling**, handling high concurrent traffic, ensuring data consistency between Redis and MySQL, and optimizing database performance.
 
-![Java](https://img.shields.io/badge/Java-17-orange)
+![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen)
 ![Redis](https://img.shields.io/badge/Redis-7.0-red)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue)
 
 
 
-# ⚠️ Lưu ý
+# ⚠️ Note
 This project is intended for learning and demonstration purposes only.
+This project was built for educational and research purposes.
+The included environment configuration files are provided to help reviewers and developers set up and run the project quickly. All configuration information is intended solely for the development environment and does not contain any sensitive data, secrets, or configurations used in a production environment.
 
 Dự án này được xây dựng với mục đích học tập, nghiên cứu.
 Các tệp cấu hình môi trường được đính kèm nhằm giúp người đánh giá và nhà phát triển có thể thiết lập và chạy dự án một cách nhanh chóng. Toàn bộ thông tin cấu hình chỉ phục vụ cho môi trường phát triển (development), không chứa dữ liệu nhạy cảm, thông tin bí mật hay bất kỳ cấu hình nào được sử dụng trong môi trường sản xuất (production).
