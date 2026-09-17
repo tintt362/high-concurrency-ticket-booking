@@ -15,74 +15,40 @@ This project is intended for learning and demonstration purposes only.
 This project was built for educational and research purposes.
 The included environment configuration files are provided to help reviewers and developers set up and run the project quickly. All configuration information is intended solely for the development environment and does not contain any sensitive data, secrets, or configurations used in a production environment.
 
-## Tech Stack
+Dự án này được xây dựng với mục đích học tập, nghiên cứu.
+Các tệp cấu hình môi trường được đính kèm nhằm giúp người đánh giá và nhà phát triển có thể thiết lập và chạy dự án một cách nhanh chóng. Toàn bộ thông tin cấu hình chỉ phục vụ cho môi trường phát triển (development), không chứa dữ liệu nhạy cảm, thông tin bí mật hay bất kỳ cấu hình nào được sử dụng trong môi trường sản xuất (production).
+## ✨ Tính năng nổi bật
 
-- **Java 21**
-- **Spring Boot 3.2**
-- **Spring Data JPA + Hibernate**
-- **MySQL**
-- **Redis** (with Lua scripts)
-- **Spring Actuator**
-- **Guava Cache**
-- **JMeter** (for load testing)
+- **Xử lý 2.000+ orders/giây** trong flash-sale mà không overselling.
+  - **Giảm latency** từ >500ms → **<60ms** nhờ 2-level caching (Guava + Redis).
+  - **Distributed Lock** với Redisson đảm bảo tính nhất quán.
+  - **Atomic stock deduction** bằng Redis Lua Script + CAS + MySQL transaction.
+  - **Audit Log** bất đồng bộ với Elasticsearch.
+  - **Monthly table sharding** cho bảng order.
+  - **Monitoring** realtime với Spring Actuator + Prometheus + Grafana.
+  - **Rollback compensation** khi transaction fail.
 
-## Key Features
+## 🛠 Tech Stack
 
-- Prevent ticket overselling under high concurrency using **Redis Lua scripts** + MySQL conditional updates
-- Handle race conditions and row lock timeout issues
-- Redis rollback / compensation mechanism when MySQL transaction fails
-- Local cache (Guava) + Redis with cache warm-up for fast ticket detail reading
-- Connection pool optimization (HikariCP)
-- Database optimization: indexes, monthly partitioned tables (`order_yyyyMM`), cursor-based pagination
-- Comprehensive load testing with JMeter
+**Backend:** Java 17, Spring Boot 3.2, Spring Data JPA, Hibernate  
+**Database:** MySQL 8, Redis 7  
+**Caching & Lock:** Guava Cache, Redis Lua Script, Redisson Distributed Lock  
+**Search & Logging:** Elasticsearch, Spring Actuator + Prometheus + Grafana  
+**Others:** Docker, Maven, Lombok
 
-## Performance Results (JMeter)
+## 📊 Benchmark
 
-| API                    | Concurrent Users | Throughput     | Error Rate | P95     | P99     |
-|------------------------|------------------|----------------|------------|---------|---------|
-| Ticket Detail (Read)   | -                | **1,928+ req/s** | **0%**     | 2ms     | 5ms     |
-| Booking (Write)        | 500 threads      | 117.7 req/s    | **0%**     | 56.2ms  | 75.2ms  |
-
--> Read Data <img width="1769" height="617" alt="jmetter_read" src="https://github.com/user-attachments/assets/0f9dd27c-2838-4de6-9156-65a419718ff6" />
-
--> Write Data <img width="1589" height="528" alt="jmetter" src="https://github.com/user-attachments/assets/fa00ce52-8f13-4872-b39c-b37181c3daba" />
-
-> Tested with 1,000 requests on the booking API.
-
-## System Design Highlights
-
-### 1. Prevent Overselling
-- Used **Redis Lua script** to atomically check and decrease ticket stock
-- Combined with MySQL conditional update to ensure consistency
-- Implemented compensation/rollback when MySQL transaction fails after Redis stock reduction
-
-### 2. Fix Row Lock & Connection Issues
-- Resolved `Lock wait timeout exceeded` by reducing transaction scope
-- Fixed HikariCP connection leak under high load by shortening long-held connections
-
-### 3. Caching Strategy
-- Guava Local Cache + Redis
-- Cache warm-up to reduce ticket-detail response time
-
-### 4. Database Optimization
-- Added proper indexes
-- Monthly order tables (`order_yyyyMM`)
-
-## Project Structure
-
-## 🏗 Architecture Diagram
-<img width="4628" height="2420" alt="architech" src="https://github.com/user-attachments/assets/3a14e124-e9ba-488a-b930-e0530e51468c" />
-<img width="1940" height="1744" alt="banvetautet-kafka" src="https://github.com/user-attachments/assets/5c180611-db79-4a15-82e0-d9c36ca4fe6e" />
-
-
+- **Throughput**: 2.000+ orders/sec (flash-sale simulation)
+  - **GET /ticket/detail**: <60ms (sau cache warm-up)
+  - **Concurrency test**: 9.000+ requests/sec (JMeter)
 
 ## 🚀 Cách chạy project
 
 ### Prerequisites
-- Java 21+
-- MySQL 8
-- Redis 7
-- Maven
+- Java 17+
+  - MySQL 8
+  - Redis 7
+  - Maven
 
 ### Chạy local
 
@@ -103,6 +69,6 @@ mvn clean spring-boot:run
 Aspiring Java Backend Developer
 
 * 🎓 Industrial University of Ho Chi Minh City (IUH)
-* 📍 Ho Chi Minh City, Vietnam
-* ✉️ Email: tintt362@gmail.com
-* 🔗 LinkedIn: https://www.linkedin.com/in/thai-trong-tin-6a1529332
+  * 📍 Ho Chi Minh City, Vietnam
+  * ✉️ Email: tintt362@gmail.com
+  * 🔗 LinkedIn: https://www.linkedin.com/in/thai-trong-tin-6a1529332

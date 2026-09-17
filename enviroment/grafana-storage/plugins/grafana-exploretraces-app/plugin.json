@@ -37,16 +37,16 @@
                 "path": "img/errors-root-cause.png"
             }
         ],
-        "version": "2.1.0",
-        "updated": "2026-07-01",
+        "version": "2.2.0",
+        "updated": "2026-08-25",
         "links": [
             {
-                "name": "Github",
-                "url": "https://github.com/grafana/explore-traces"
+                "name": "GitHub",
+                "url": "https://github.com/grafana/traces-drilldown"
             },
             {
                 "name": "Report bug",
-                "url": "https://github.com/grafana/explore-traces/issues/new"
+                "url": "https://github.com/grafana/traces-drilldown/issues/new?template=bug_report.md"
             }
         ]
     },

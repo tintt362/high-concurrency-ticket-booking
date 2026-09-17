@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface TicketOrderJPAMapper extends JpaRepository<TicketDetail, Long> {
@@ -29,7 +30,7 @@ public interface TicketOrderJPAMapper extends JpaRepository<TicketDetail, Long> 
      * @return The number of rows affected (should be 0 or 1).
      */
     @Modifying
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query("UPDATE TicketDetail t SET t.updatedAt = CURRENT_TIMESTAMP, " +
             "t.stockAvailable = t.stockAvailable - :quantity " +
             "WHERE t.id = :ticketId AND t.stockAvailable >= :quantity")
