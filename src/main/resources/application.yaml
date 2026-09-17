@@ -10,7 +10,7 @@ spring:
   #DBS
   datasource:
     hikari:
-      maximum-pool-size: 80
+      maximum-pool-size: 1000
       minimum-idle: 20
       connection-timeout: 3000
       validation-timeout: 1000

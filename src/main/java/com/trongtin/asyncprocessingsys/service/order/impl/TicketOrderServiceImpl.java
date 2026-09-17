@@ -50,6 +50,9 @@ public class TicketOrderServiceImpl implements TicketOrderService {
     private StockTransactionService stockTransactionService;
 
     @Autowired
+    OrderTransactionService orderTransactionService;
+
+    @Autowired
     private OrderAuditLogService auditLogService;
 
     // SELECT
@@ -81,10 +84,161 @@ public class TicketOrderServiceImpl implements TicketOrderService {
     // version -> Lock thread
     // UPDATE product SET stock = stock - quantity, version = version + 1 WHERE productId = 1 AND stock > 0 AND version = 10;
 
-
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public PlaceOrderResponse placeOrderCAS(Long ticketId, int quantity) {
+
+        // =========================================================
+        // 1. Validate input
+        // =========================================================
+        if (ticketId == null || quantity <= 0) {
+            return PlaceOrderResponse.failed(
+                    "INVALID_REQUEST",
+                    "Thông tin đặt vé không hợp lệ"
+            );
+        }
+
+        // =========================================================
+        // 2. Lấy price TRƯỚC khi reserve stock
+        //    Không cần DB transaction ở bước này
+        // =========================================================
+        long unitPrice =
+                stockOrderCacheService.getEffectivePrice(ticketId);
+
+        if (unitPrice <= 0) {
+            return PlaceOrderResponse.failed(
+                    "PRICE_NOT_FOUND",
+                    "Không thể xác định giá vé"
+            );
+        }
+
+        // =========================================================
+        // 3. Redis Lua = Atomic Gate
+        // =========================================================
+        int redisResult =
+                stockOrderCacheService.decreaseStockCacheByLUA(
+                        ticketId,
+                        quantity
+                );
+        log.info(
+                "redisResult ticketId={}",
+                redisResult
+        );
+
+        // =========================================================
+        // 4. Cache miss → warm-up → retry
+        // =========================================================
+        if (redisResult == -1) {
+
+            log.info(
+                    "placeOrderCAS: cache miss, warming up ticketId={}",
+                    ticketId
+            );
+
+            boolean warmed =
+                    stockOrderCacheService
+                            .addStockAvailableToCache(ticketId);
+
+            if (!warmed) {
+                return PlaceOrderResponse.failed(
+                        "TICKET_NOT_FOUND",
+                        "Không tìm thấy sự kiện"
+                );
+            }
+
+            redisResult =
+                    stockOrderCacheService.decreaseStockCacheByLUA(
+                            ticketId,
+                            quantity
+                    );
+        }
+
+        // =========================================================
+        // 5. Redis atomic gate reject
+        // =========================================================
+        if (redisResult == 0) {
+
+            log.info(
+                    "placeOrderCAS: insufficient stock, ticketId={}",
+                    ticketId
+            );
+
+            return PlaceOrderResponse.failed(
+                    "OUT_OF_STOCK",
+                    "Hết vé, vui lòng thử lại sau"
+            );
+        }
+
+        // =========================================================
+        // 6. Redis đã reserve stock
+        //    Bắt đầu DB transaction
+        // =========================================================
+        try {
+
+            PlaceOrderResponse response =
+                    orderTransactionService.createOrder(
+                            ticketId,
+                            quantity,
+                            unitPrice
+                    );
+
+            // =====================================================
+            // 7. DB transaction SUCCESS → Redis reservation giữ nguyên
+            // =====================================================
+
+            return response;
+
+        } catch (Exception e) {
+
+            // =====================================================
+            // 8. DB transaction FAILED
+            //    MySQL đã rollback
+            //    Redis không tự rollback → compensation
+            // =====================================================
+
+            log.error(
+                    "placeOrderCAS: DB transaction failed, " +
+                            "compensating Redis stock. ticketId={}",
+                    ticketId,
+                    e
+            );
+
+            try {
+
+                stockOrderCacheService.increaseStockCache(
+                        ticketId,
+                        quantity
+                );
+
+            } catch (Exception compensationException) {
+
+                // =================================================
+                // Compensation cũng fail
+                // → cần retry / recovery / reconciliation
+                // =================================================
+
+                log.error(
+                        "CRITICAL: Redis compensation failed. " +
+                                "ticketId={}, quantity={}",
+                        ticketId,
+                        quantity,
+                        compensationException
+                );
+
+                // Production:
+                // → push compensation event/task
+                // → retry
+                // → reconciliation
+            }
+
+            return PlaceOrderResponse.failed(
+                    "SERVER_ERROR",
+                    "Lỗi hệ thống, vui lòng thử lại"
+            );
+        }
+    }
+    //  @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PlaceOrderResponse placeOrderCAS1(Long ticketId, int quantity) {
         boolean isRedisDecremented = false;
         Integer oldStock = null;
         try {
